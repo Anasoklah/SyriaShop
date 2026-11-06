@@ -1,0 +1,22 @@
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio / Rider / VS Code caches
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# User secrets / environment (if we ever use them locally)
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="src/SyriaShop.Api/SyriaShop.Api.csproj" />
+  <Project Path="src/SyriaShop.Application/SyriaShop.Application.csproj" />
+  <Project Path="src/SyriaShop.Domain/SyriaShop.Domain.csproj" />
+  <Project Path="src/SyriaShop.Infrastructure/SyriaShop.Infrastructure.csproj" />
+  <Project Path="tests/SyriaShop.UnitTests/SyriaShop.UnitTests.csproj" />
+  <Project Path="tests/SyriaShop.IntegrationTests/SyriaShop.IntegrationTests.csproj" />
+</Solution>
