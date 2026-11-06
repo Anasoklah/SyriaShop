@@ -29,7 +29,7 @@ public static class EnvFileLoader
             var key = trimmed[..separatorIndex].Trim();
             var value = trimmed[(separatorIndex + 1)..].Trim();
 
-            settings[key] = value;
+            settings[key.Replace("__", ":")] = value;
         }
 
         return settings;
