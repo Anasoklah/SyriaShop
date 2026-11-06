@@ -19,7 +19,18 @@ public class EnvFileLoaderTests
 
         var settings = EnvFileLoader.Load(path);
 
-        Assert.Equal("Server=ANAS-OKLAH\\ANAS_O;Database=SyriaShopDb;", settings["ConnectionStrings__Default"]);
+        Assert.Equal("Server=ANAS-OKLAH\\ANAS_O;Database=SyriaShopDb;", settings["ConnectionStrings:Default"]);
+    }
+
+    [Fact]
+    public void Load_TranslatesDoubleUnderscoresToHierarchySeparator()
+    {
+        var path = WriteEnvFile("Section__Nested__Key=value");
+
+        var settings = EnvFileLoader.Load(path);
+
+        Assert.Equal("value", settings["Section:Nested:Key"]);
+        Assert.False(settings.ContainsKey("Section__Nested__Key"));
     }
 
     [Fact]
