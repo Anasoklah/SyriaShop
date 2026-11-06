@@ -58,13 +58,13 @@ A feature is done ONLY when:
 
 ## 5. Git Rules
 
-- Commits follow **Conventional Commits**: `feat:`, `fix:`, `chore:`, `refactor:`,
-  `test:`, `docs:`, plus scope, e.g. `feat(catalog): list products with filters`.
-- One logical feature per commit — no "changes and stuff" commits.
+- **GitHub Flow is the workflow:** feature work happens on branches named
+  `feat/<scope>`, e.g. `feat/catalog-crud`. Merging into `main` uses `--no-ff` so
+  branch history stays visible (via PR once CI exists; local merge until then).
+- Docs/chore commits (`docs:`, `chore:`) may land directly on `main`.
+- One logical feature per branch — no "changes and stuff" branches.
 - No secrets, connection strings, or keys ever committed. Local config lives in
   `.env` (gitignored; see `.env.example`) or environment variables, never `appsettings.json`.
-- Push only the `main` branch and feature branches merged by remote (GitHub flow) once
-  CI exists; in the early stage, commits straight to `main` are acceptable.
 
 ## 6. Agent Behavior
 
