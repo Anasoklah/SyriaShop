@@ -3,7 +3,7 @@
 > Living document. Updated after every completed task — never deleted.
 > The build-on-every-push CI workflow proves the whole file's history is honest.
 
-**Current focus:** Phase 1 — Core stack (EF Core migrations, ProblemDetails, Swagger polish)
+**Current focus:** OpenAPI polish + structured logging (remaining Phase 1 items)
 
 ---
 
@@ -14,15 +14,19 @@
 - [x] Build succeeds with 0 errors / 0 warnings
 - [x] `AGENTS.md` written (AI contract)
 - [x] `README.md` written
-- [x] Pushed to GitHub
+- [x] Pushed to GitHub (https://github.com/Anasoklah/SyriaShop)
+- [x] SSH deploy key set up for pushing
 
 ## Phase 1 — Core stack
 
-- [ ] EF Core `DbContext` + SQL Server (LocalDB) + first migration
-- [ ] Serilog or structured logging setup
-- [ ] Global error handling middleware returning RFC 7807 `ProblemDetails`
-- [ ] Health check endpoint (`/health`)
-- [ ] Swagger/OpenAPI notes (tags, descriptions, machine-readable docs)
+- [x] EF Core `AppDbContext` + SQL Server + `ConnectionStrings__Default` in local `.env`
+- [x] `dotnet-ef` tooling + `Initial` migration applied to `SyriaShopDb` (ANAS-OKLAH\ANAS_O)
+- [x] Design-time DbContext factory for EF tools
+- [x] Global error handling returning RFC 7807 `ProblemDetails`
+- [x] Health check endpoint (`/health`, includes a DB connectivity probe)
+- [x] Unit tests: 6 passing (`EnvFileLoaderTests`)
+- [ ] Structured logging setup
+- [ ] OpenAPI/Swagger polish (tags, descriptions, machine-readable docs)
 
 ## Phase 2 — Catalog
 

@@ -61,8 +61,8 @@ A feature is done ONLY when:
 - Commits follow **Conventional Commits**: `feat:`, `fix:`, `chore:`, `refactor:`,
   `test:`, `docs:`, plus scope, e.g. `feat(catalog): list products with filters`.
 - One logical feature per commit — no "changes and stuff" commits.
-- No secrets, connection strings, or keys ever committed. Local config goes in
-  user secrets (`dotnet user-secrets`) or environment variables.
+- No secrets, connection strings, or keys ever committed. Local config lives in
+  `.env` (gitignored; see `.env.example`) or environment variables, never `appsettings.json`.
 - Push only the `main` branch and feature branches merged by remote (GitHub flow) once
   CI exists; in the early stage, commits straight to `main` are acceptable.
 
