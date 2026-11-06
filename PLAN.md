@@ -3,7 +3,7 @@
 > Living document. Updated after every completed task — never deleted.
 > The build-on-every-push CI workflow proves the whole file's history is honest.
 
-**Current focus:** OpenAPI polish + structured logging (remaining Phase 1 items)
+**Current focus:** Phase 2 — Catalog (Category + Product entities, CRUD, pagination, seeds)
 
 ---
 
@@ -25,8 +25,8 @@
 - [x] Global error handling returning RFC 7807 `ProblemDetails`
 - [x] Health check endpoint (`/health`, includes a DB connectivity probe)
 - [x] Unit tests: 6 passing (`EnvFileLoaderTests`)
-- [ ] Structured logging setup
-- [ ] OpenAPI/Swagger polish (tags, descriptions, machine-readable docs)
+- [x] Structured logging: JSON formatter in prod, simple text in dev (BCL-only, zero extra packages)
+- [x] OpenAPI document info via transformer (title/description/contact at `/openapi/v1.json`)
 
 ## Phase 2 — Catalog
 

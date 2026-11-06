@@ -10,7 +10,8 @@ if (File.Exists(envFilePath))
 }
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+    options.AddDocumentTransformer(new SyriaShop.Api.Documents.OpenApiDocumentInfoTransformer()));
 builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks()
