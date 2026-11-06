@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="AGENTS.md" />
+    <File Path="PLAN.md" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/SyriaShop.Api/SyriaShop.Api.csproj" />
     <Project Path="src/SyriaShop.Application/SyriaShop.Application.csproj" />
