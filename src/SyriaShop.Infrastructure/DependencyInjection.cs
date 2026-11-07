@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SyriaShop.Application;
+using SyriaShop.Application.Catalog;
 
 namespace SyriaShop.Infrastructure;
 
@@ -15,6 +17,10 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(connectionString, sql =>
                 sql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+
+        services.AddScoped<ICategoryRepository, Repositories.CategoryRepository>();
+        services.AddScoped<IProductRepository, Repositories.ProductRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
