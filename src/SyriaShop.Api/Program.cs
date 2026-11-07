@@ -1,3 +1,4 @@
+using Scalar.AspNetCore;
 using SyriaShop.Api;
 using SyriaShop.Application;
 using SyriaShop.Infrastructure;
@@ -27,6 +28,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
