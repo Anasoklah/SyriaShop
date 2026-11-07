@@ -55,14 +55,29 @@ A feature is done ONLY when:
 1. `dotnet build` completes with **0 errors and 0 warnings**.
 2. `dotnet test` passes (or the feature has accompanying tests that fail until fixed).
 3. Feature is listed in `PLAN.md` and marked for the human to review.
+4. The agent has delivered a **detailed work summary** for human review (see section 6).
 
 ## 5. Git Rules
 
-- **GitHub Flow is the workflow:** feature work happens on branches named
-  `feat/<scope>`, e.g. `feat/catalog-crud`. Merging into `main` uses `--no-ff` so
-  branch history stays visible (via PR once CI exists; local merge until then).
-- Docs/chore commits (`docs:`, `chore:`) may land directly on `main`.
-- One logical feature per branch — no "changes and stuff" branches.
+- **GitHub Flow is the workflow — the human is the gatekeeper at every gate:**
+  1. **Before creating a branch**, the agent MUST ask the human and wait for approval.
+     Feature branches are named `feat/<scope>`, e.g. `feat/auth-jwt`.
+  2. The agent implements on the branch and commits there, following
+     **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`, `test:`) with scope,
+     e.g. `feat(catalog): list products with filters`. One logical feature per branch.
+  3. The agent MUST **present a detailed summary** of what was done — files changed,
+     logic and decisions, test results — so the human can review code and behavior
+     BEFORE anything leaves the machine.
+  4. **Before pushing**, the agent MUST ask the human and wait for approval.
+     The human reviews the diff first.
+  5. **Merges happen on GitHub, done by the human** — the agent NEVER merges
+     (`--no-ff`, squash or otherwise). After pushing, the human opens the Pull
+     Request on GitHub and merges; the merge method the human chooses keeps the
+     feature branch visible in history.
+  6. After the human merges into `main`, the agent refreshes the local copy
+     (`git switch main` + `git pull`) before starting new work.
+- Docs/chore commits (`docs:`, `chore:`) may be created on `main` locally, but
+  pushing them still requires the human's approval.
 - No secrets, connection strings, or keys ever committed. Local config lives in
   `.env` (gitignored; see `.env.example`) or environment variables, never `appsettings.json`.
 
@@ -71,7 +86,11 @@ A feature is done ONLY when:
 - If instructions are ambiguous: **ask first**, don't guess.
 - Prefer small, reviewable changes over large rewrites.
 - Never delete or rewrite files that the human did not ask to change.
-- After significant work, update `PLAN.md` status and summarize what changed.
+- After each completed task or feature, the agent MUST deliver a **detailed report**:
+  what was built, which files changed and why, key design decisions and trade-offs,
+  test/build results, and what the human should manually verify. Vague one-liners
+  do not count as a report.
+- Update `PLAN.md` status as part of every significant piece of work.
 - Documentation in this repo is written in English; keep it short and honest.
 
 ---
