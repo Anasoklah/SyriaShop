@@ -5,7 +5,6 @@ namespace SyriaShop.Application.Catalog;
 
 public sealed class CategoryService(
     ICategoryRepository categoryRepository,
-    IProductRepository productRepository,
     IUnitOfWork unitOfWork) : ICategoryService
 {
     private const int MinPageSize = 1;
