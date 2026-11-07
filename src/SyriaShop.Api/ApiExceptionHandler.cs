@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.Mvc;
 using SyriaShop.Application.Catalog;
 using SyriaShop.Application.Exceptions;
 using SyriaShop.Domain;
-
 namespace SyriaShop.Api;
 
-public sealed class CatalogExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
+public sealed class ApiExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         var (statusCode, title) = exception switch
         {
+            UnauthorizedException => (StatusCodes.Status401Unauthorized, "Authentication failed"),
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             ConflictException => (StatusCodes.Status409Conflict, "Resource conflict"),
             DomainException => (StatusCodes.Status400BadRequest, "Request rejected by domain rules"),
