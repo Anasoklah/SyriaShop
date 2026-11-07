@@ -27,6 +27,7 @@
 - [x] Unit tests: 6 passing (`EnvFileLoaderTests`)
 - [x] Structured logging: JSON formatter in prod, simple text in dev (BCL-only, zero extra packages)
 - [x] OpenAPI document info via transformer (title/description/contact at `/openapi/v1.json`)
+- [x] Scalar API reference UI (`/scalar/v1` in Development) — interactive endpoint testing page
 
 ## Phase 2 — Catalog
 
