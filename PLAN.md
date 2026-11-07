@@ -3,7 +3,7 @@
 > Living document. Updated after every completed task — never deleted.
 > The build-on-every-push CI workflow proves the whole file's history is honest.
 
-**Current focus:** Phase 3 - Identity & Auth (JWT, Admin/Customer roles)
+**Current focus:** Human review of Phase 3 on `feat/auth-jwt`, then Phase 4 — Cart & Orders
 
 ---
 
@@ -39,9 +39,11 @@
 
 ## Phase 3 — Identity & Auth
 
-- [ ] User registration / login (JWT)
-- [ ] Roles: `Admin`, `Customer`
-- [ ] Protect admin endpoints; customers see only their own data
+- [x] User registration / login (JWT access token ~15 min + rotating refresh token 7 days stored in DB)
+- [x] Roles: `Admin`, `Customer` (seeded admin/customer accounts via env-driven seeder)
+- [x] Protect admin endpoints (only catalog writes so far; per-customer data comes with Phase 4 orders)
+- [x] `api/auth/register|login|refresh`; auth failures return generic RFC 7807 401s
+- [x] 55 tests green: 32 unit (incl. `AccessTokenGenerator`) + 23 integration (auth flows + role-gate matrix)
 
 ## Phase 4 — Cart & Orders
 
