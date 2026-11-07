@@ -3,7 +3,7 @@
 > Living document. Updated after every completed task — never deleted.
 > The build-on-every-push CI workflow proves the whole file's history is honest.
 
-**Current focus:** Phase 2 — Catalog (Category + Product entities, CRUD, pagination, seeds)
+**Current focus:** Phase 3 - Identity & Auth (JWT, Admin/Customer roles)
 
 ---
 
@@ -30,11 +30,11 @@
 
 ## Phase 2 — Catalog
 
-- [ ] Category entity + CRUD (admin)
-- [ ] Product entity + CRUD (admin)
-- [ ] List endpoint with search / filter / sort / pagination
-- [ ] Seed sample data for local development
-- [ ] Unit tests for domain rules; integration tests for endpoints
+- [x] Category entity + CRUD (admin)
+- [x] Product entity + CRUD (admin)
+- [x] List endpoint with search / filter / sort / pagination
+- [x] Seed sample data for local development
+- [x] Unit tests for domain rules; integration tests for endpoints (29 unit + 14 integration, all green)
 
 ## Phase 3 — Identity & Auth
 
