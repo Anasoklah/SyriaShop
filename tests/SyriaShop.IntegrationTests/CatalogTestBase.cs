@@ -1,6 +1,12 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using SyriaShop.Application.Catalog;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using SyriaShop.Application.Identity;
+using SyriaShop.Infrastructure;
+using SyriaShop.Infrastructure.Identity;
 
 namespace SyriaShop.IntegrationTests;
 
@@ -10,23 +16,42 @@ public abstract class CatalogTestBase : IClassFixture<CatalogApiFactory>
 
     protected CatalogTestBase(CatalogApiFactory factory)
     {
+        Factory = factory;
         HttpClient = factory.CreateClient();
     }
 
+    protected CatalogApiFactory Factory { get; }
+
     protected HttpClient HttpClient { get; }
 
-    protected static async Task<CategoryDetailResponse> CreateTestCategoryAsync(HttpClient client)
+    protected async Task SeedIdentityAsync()
     {
-        var suffix = Guid.NewGuid().ToString("N")[..8];
-        var request = new CategoryCreateRequest(
-            NameEn: $"Shared Category {suffix}",
-            NameAr: $"فئة مشتركة {suffix}",
-            Slug: $"shared-category-{suffix}",
-            IsActive: true);
+        using var scope = Factory.Services.CreateScope();
 
-        var response = await client.PostAsJsonAsync("/api/categories", request, JsonOptions);
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
-        return await response.Content.ReadFromJsonAsync<CategoryDetailResponse>(JsonOptions)
-            ?? throw new InvalidOperationException("Category creation did not return a body.");
+        await IdentitySeeder.SeedAsync(userManager, roleManager, configuration, NullLogger.Instance);
+    }
+
+    protected async Task<(string Email, string Password)> GetAdminCredentialsAsync()
+    {
+        var configuration = Factory.Services.GetRequiredService<IConfiguration>();
+
+        return (
+            configuration.GetSection("Auth:SeedAdminEmail").Value!,
+            configuration.GetSection("Auth:SeedAdminPassword").Value!);
+    }
+
+    protected async Task<string> LoginAsync(HttpClient client, string email, string password)
+    {
+        var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password), JsonOptions);
+
+        response.EnsureSuccessStatusCode();
+
+        var tokens = await response.Content.ReadFromJsonAsync<TokenPairResponse>(JsonOptions);
+
+        return tokens!.AccessToken;
     }
 }

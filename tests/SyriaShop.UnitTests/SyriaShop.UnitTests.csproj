@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SyriaShop.Api\SyriaShop.Api.csproj" />
+    <ProjectReference Include="..\..\src\SyriaShop.Infrastructure\SyriaShop.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
