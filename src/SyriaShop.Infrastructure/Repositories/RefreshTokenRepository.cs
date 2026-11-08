@@ -4,18 +4,38 @@ using SyriaShop.Domain;
 
 namespace SyriaShop.Infrastructure.Repositories;
 
-public sealed class RefreshTokenRepository(AppDbContext context) : IRefreshTokenRepository
+public sealed class RefreshTokenRepository(AppDbContext context, TimeProvider timeProvider) : IRefreshTokenRepository
 {
     public Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken = default) =>
-        context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token, cancellationToken);
+        context.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(r => r.Token == token, cancellationToken);
 
-    public async Task<ICollection<RefreshToken>> GetActiveTokensForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> TryRevokeActiveTokenAsync(
+        string token,
+        DateTimeOffset revokedAt,
+        string? replacedByToken,
+        CancellationToken cancellationToken = default)
     {
-        var now = DateTimeOffset.UtcNow;
+        var affected = await context.RefreshTokens
+            .Where(r => r.Token == token && r.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                updates => updates
+                    .SetProperty(r => r.RevokedAt, revokedAt)
+                    .SetProperty(r => r.ReplacedByToken, replacedByToken),
+                cancellationToken);
 
-        return await context.RefreshTokens
+        return affected == 1;
+    }
+
+    public async Task RevokeActiveTokensForUserAsync(
+        Guid userId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        await context.RefreshTokens
             .Where(r => r.UserId == userId && r.RevokedAt == null && r.ExpiresAt > now)
-            .ToListAsync(cancellationToken);
+            .ExecuteUpdateAsync(updates => updates.SetProperty(r => r.RevokedAt, revokedAt), cancellationToken);
     }
 
     public void Add(RefreshToken refreshToken) => context.Add(refreshToken);

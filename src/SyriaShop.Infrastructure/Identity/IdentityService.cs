@@ -18,6 +18,7 @@ public sealed class IdentityService(
 {
     private static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(7);
+    private const string InvalidRefreshTokenMessage = "Invalid refresh token.";
 
     public async Task<TokenPairResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -65,38 +66,40 @@ public sealed class IdentityService(
     public async Task<TokenPairResponse> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken = default)
     {
         var stored = await refreshTokenRepository.GetByTokenAsync(request.RefreshToken, cancellationToken)
-            ?? throw new UnauthorizedException("Invalid refresh token.");
+            ?? throw new UnauthorizedException(InvalidRefreshTokenMessage);
 
         var now = timeProvider.GetUtcNow();
 
-        if (!stored.IsActive(now))
+        if (stored.IsExpired(now))
         {
-            throw new UnauthorizedException("Refresh token expired or revoked.");
+            throw new UnauthorizedException(InvalidRefreshTokenMessage);
         }
 
         var user = await userManager.FindByIdAsync(stored.UserId.ToString())
-            ?? throw new UnauthorizedException("Invalid refresh token.");
+            ?? throw new UnauthorizedException(InvalidRefreshTokenMessage);
 
         var newPair = await IssueTokensAsync(user, cancellationToken);
 
-        stored.Revoke(now, replacedByToken: newPair.RefreshToken);
+        var revoked = await refreshTokenRepository.TryRevokeActiveTokenAsync(
+            stored.Token, now, newPair.RefreshToken, cancellationToken);
+
+        if (!revoked)
+        {
+            // The token was concurrently re-used: treat as suspected theft.
+            // Revoke every active token for this user and reject the request
+            // without issuing the pending replacement token.
+            await refreshTokenRepository.RevokeActiveTokensForUserAsync(stored.UserId, now, cancellationToken);
+
+            throw new UnauthorizedException(InvalidRefreshTokenMessage);
+        }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return newPair;
     }
 
-    public async Task RevokeUserTokensAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        var active = await refreshTokenRepository.GetActiveTokensForUserAsync(userId, cancellationToken);
-
-        foreach (var token in active)
-        {
-            token.Revoke(timeProvider.GetUtcNow());
-        }
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-    }
+    public async Task RevokeUserTokensAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await refreshTokenRepository.RevokeActiveTokensForUserAsync(userId, timeProvider.GetUtcNow(), cancellationToken);
 
     private async Task<TokenPairResponse> IssueTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
