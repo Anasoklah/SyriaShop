@@ -108,19 +108,6 @@ public sealed class CategoryEndpointsTests(CatalogApiFactory factory) : CatalogT
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
-    private async Task<HttpClient> CreateAdminClientAsync()
-    {
-        await SeedIdentityAsync();
-
-        var (email, password) = await GetAdminCredentialsAsync();
-        var token = await LoginAsync(HttpClient, email, password);
-
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
-
-        return client;
-    }
-
     private async Task<CategoryDetailResponse> CreateSharedCategoryAsync(HttpClient client, string suffix)
     {
         var response = await client.PostAsJsonAsync("/api/categories", new CategoryCreateRequest(

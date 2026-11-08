@@ -129,19 +129,6 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private async Task<HttpClient> CreateAdminClientAsync()
-    {
-        await SeedIdentityAsync();
-
-        var (email, password) = await GetAdminCredentialsAsync();
-        var token = await LoginAsync(HttpClient, email, password);
-
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
-
-        return client;
-    }
-
     private async Task<CategoryDetailResponse> CreateCategoryAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync("/api/categories", new CategoryCreateRequest(

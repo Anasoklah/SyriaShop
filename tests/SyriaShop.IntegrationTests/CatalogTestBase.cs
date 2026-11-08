@@ -54,4 +54,25 @@ public abstract class CatalogTestBase : IClassFixture<CatalogApiFactory>
 
         return tokens!.AccessToken;
     }
+
+    protected async Task<HttpClient> CreateAdminClientAsync()
+    {
+        await SeedIdentityAsync();
+
+        var (email, password) = await GetAdminCredentialsAsync();
+        var token = await LoginAsync(HttpClient, email, password);
+
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        return client;
+    }
+
+    protected async Task<HttpClient> CreateClientWithTokenAsync(string token)
+    {
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        return client;
+    }
 }
