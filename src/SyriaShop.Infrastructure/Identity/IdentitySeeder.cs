@@ -20,7 +20,12 @@ public static class IdentitySeeder
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                _ = await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+                var roleResult = await roleManager.CreateAsync(new IdentityRole<Guid>(role));
+
+                if (!roleResult.Succeeded)
+                {
+                    logger.LogError("Failed to seed role {Role}: {Errors}", role, DescribeErrors(roleResult));
+                }
             }
         }
 
@@ -31,11 +36,7 @@ public static class IdentitySeeder
         {
             if (await userManager.FindByEmailAsync(adminEmail) is null)
             {
-                var admin = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
-                _ = await userManager.CreateAsync(admin, adminPassword);
-                _ = await userManager.AddToRoleAsync(admin, AdminRole);
-
-                logger.LogInformation("Seeded admin account {Email}.", adminEmail);
+                await SeedUserAsync(userManager, adminEmail, adminPassword, AdminRole, logger);
             }
         }
 
@@ -46,12 +47,42 @@ public static class IdentitySeeder
         {
             if (await userManager.FindByEmailAsync(customerEmail) is null)
             {
-                var customer = new ApplicationUser { UserName = customerEmail, Email = customerEmail };
-                _ = await userManager.CreateAsync(customer, customerPassword);
-                _ = await userManager.AddToRoleAsync(customer, CustomerRole);
-
-                logger.LogInformation("Seeded customer account {Email}.", customerEmail);
+                await SeedUserAsync(userManager, customerEmail, customerPassword, CustomerRole, logger);
             }
         }
     }
+
+    private static async Task SeedUserAsync(
+        UserManager<ApplicationUser> userManager,
+        string email,
+        string password,
+        string role,
+        ILogger logger)
+    {
+        var user = new ApplicationUser { UserName = email, Email = email };
+
+        var creation = await userManager.CreateAsync(user, password);
+
+        if (!creation.Succeeded)
+        {
+            logger.LogError("Failed to seed {Role} account {Email}: {Errors}", role, email, DescribeErrors(creation));
+
+            return;
+        }
+
+        var roleAssignment = await userManager.AddToRoleAsync(user, role);
+
+        if (!roleAssignment.Succeeded)
+        {
+            logger.LogError("Failed to assign role {Role} to seeded account {Email}: {Errors}",
+                role, email, DescribeErrors(roleAssignment));
+
+            return;
+        }
+
+        logger.LogInformation("Seeded {Role} account {Email}.", role, email);
+    }
+
+    private static string DescribeErrors(IdentityResult result) =>
+        string.Join(' ', result.Errors.Select(e => $"{e.Code}: {e.Description}"));
 }
