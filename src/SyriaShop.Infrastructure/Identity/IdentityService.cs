@@ -31,7 +31,12 @@ public sealed class IdentityService(
             throw new DomainException(string.Join(' ', creation.Errors.Select(e => $"{e.Code}: {e.Description}")));
         }
 
-        _ = await userManager.AddToRoleAsync(user, IdentitySeeder.CustomerRole);
+        var roleAssignment = await userManager.AddToRoleAsync(user, IdentitySeeder.CustomerRole);
+
+        if (!roleAssignment.Succeeded)
+        {
+            throw new DomainException(string.Join(' ', roleAssignment.Errors.Select(e => $"{e.Code}: {e.Description}")));
+        }
 
         var pair = await IssueTokensAsync(user, cancellationToken);
 
@@ -78,35 +83,52 @@ public sealed class IdentityService(
         var user = await userManager.FindByIdAsync(stored.UserId.ToString())
             ?? throw new UnauthorizedException(InvalidRefreshTokenMessage);
 
-        var newPair = await IssueTokensAsync(user, cancellationToken);
+        var (accessToken, accessTokenExpiresAt) = await CreateAccessTokenAsync(user, now);
+        var nextRefreshToken = RefreshToken.Issue(user.Id, Guid.NewGuid().ToString("N"), now.Add(RefreshTokenLifetime), now);
+
+        // The conditional revoke, the replacement insert and the theft
+        // response revoke all commit as one unit of work; a partial state can
+        // only survive a process crash between commands, never a failed save.
+        await using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         var revoked = await refreshTokenRepository.TryRevokeActiveTokenAsync(
-            stored.Token, now, newPair.RefreshToken, cancellationToken);
+            stored.Token, now, nextRefreshToken.Token, cancellationToken);
 
-        if (!revoked)
+        if (revoked)
         {
-            // The token was concurrently re-used: treat as suspected theft.
-            // Revoke every active token for this user and reject the request
-            // without issuing the pending replacement token.
-            await refreshTokenRepository.RevokeActiveTokensForUserAsync(stored.UserId, now, cancellationToken);
-
-            throw new UnauthorizedException(InvalidRefreshTokenMessage);
+            refreshTokenRepository.Add(nextRefreshToken);
+        }
+        else
+        {
+            // Reuse of an already-revoked token is treated as suspected theft:
+            // instead of issuing the replacement token, every active token for
+            // this user is revoked. Reuse of a rotated token also revokes the
+            // whole family, including tokens issued to other devices - that is
+            // the deliberate cost of fail-closed session security here.
+            await refreshTokenRepository.RevokeActiveTokensForUserAsync(stored.UserId, cancellationToken);
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
-        return newPair;
+        if (!revoked)
+        {
+            throw new UnauthorizedException(InvalidRefreshTokenMessage);
+        }
+
+        return new TokenPairResponse(accessToken, nextRefreshToken.Token, accessTokenExpiresAt);
     }
 
     public async Task RevokeUserTokensAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        await refreshTokenRepository.RevokeActiveTokensForUserAsync(userId, timeProvider.GetUtcNow(), cancellationToken);
+        await refreshTokenRepository.RevokeActiveTokensForUserAsync(userId, cancellationToken);
 
-    private async Task<TokenPairResponse> IssueTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
+    private async Task<(string AccessToken, DateTimeOffset ExpiresAt)> CreateAccessTokenAsync(
+        ApplicationUser user,
+        DateTimeOffset now)
     {
         var roles = await userManager.GetRolesAsync(user);
-        var now = timeProvider.GetUtcNow();
 
-        var (accessToken, accessExpiresAt) = accessTokenGenerator.Generate(
+        var (accessToken, expiresAt) = accessTokenGenerator.Generate(
             user.Id,
             user.Email!,
             roles.ToArray(),
@@ -115,6 +137,14 @@ public sealed class IdentityService(
             configuration.GetSection("Auth:SigningKey").Value!,
             AccessTokenLifetime,
             now);
+
+        return (accessToken, expiresAt);
+    }
+
+    private async Task<TokenPairResponse> IssueTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        var (accessToken, accessExpiresAt) = await CreateAccessTokenAsync(user, now);
 
         var refreshToken = RefreshToken.Issue(user.Id, Guid.NewGuid().ToString("N"), now.Add(RefreshTokenLifetime), now);
 

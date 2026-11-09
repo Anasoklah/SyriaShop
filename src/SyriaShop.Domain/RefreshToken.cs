@@ -25,8 +25,6 @@ public sealed class RefreshToken : Entity
 
     public bool IsExpired(DateTimeOffset now) => ExpiresAt <= now;
 
-    public bool IsActive(DateTimeOffset now) => !RevokedAt.HasValue && !IsExpired(now);
-
     public static RefreshToken Issue(Guid userId, string token, DateTimeOffset expiresAt, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(token))
@@ -40,11 +38,5 @@ public sealed class RefreshToken : Entity
         }
 
         return new RefreshToken(userId, token, expiresAt);
-    }
-
-    public void Revoke(DateTimeOffset now, string? replacedByToken = null)
-    {
-        RevokedAt = now;
-        ReplacedByToken = replacedByToken;
     }
 }

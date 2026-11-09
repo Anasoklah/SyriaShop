@@ -23,19 +23,18 @@ public sealed class RefreshTokenRepository(AppDbContext context, TimeProvider ti
                     .SetProperty(r => r.ReplacedByToken, replacedByToken),
                 cancellationToken);
 
-        return affected == 1;
+        return affected > 0;
     }
 
     public async Task RevokeActiveTokensForUserAsync(
         Guid userId,
-        DateTimeOffset revokedAt,
         CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow();
 
         await context.RefreshTokens
             .Where(r => r.UserId == userId && r.RevokedAt == null && r.ExpiresAt > now)
-            .ExecuteUpdateAsync(updates => updates.SetProperty(r => r.RevokedAt, revokedAt), cancellationToken);
+            .ExecuteUpdateAsync(updates => updates.SetProperty(r => r.RevokedAt, now), cancellationToken);
     }
 
     public void Add(RefreshToken refreshToken) => context.Add(refreshToken);
