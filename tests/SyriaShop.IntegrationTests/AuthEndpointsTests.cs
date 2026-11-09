@@ -123,6 +123,31 @@ public sealed class AuthEndpointsTests(CatalogApiFactory factory) : CatalogTestB
     }
 
     [Fact]
+    public async Task Refresh_WithExpiredStoredToken_Returns401()
+    {
+        var email = $"expired-{Guid.NewGuid():N}@test.local";
+
+        var register = await HttpClient.PostAsJsonAsync("/api/auth/register", new RegisterRequest(
+            email, "Pass#2026!Expired"), JsonOptions);
+        var tokens = (await register.Content.ReadFromJsonAsync<TokenPairResponse>(JsonOptions))!;
+
+        try
+        {
+            Factory.Clock.Advance(TimeSpan.FromDays(8));
+
+            var response = await HttpClient.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(
+                tokens.RefreshToken), JsonOptions);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+        }
+        finally
+        {
+            Factory.Clock.Reset();
+        }
+    }
+
+    [Fact]
     public async Task Refresh_WithUnknownToken_Returns401()
     {
         var response = await HttpClient.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest(

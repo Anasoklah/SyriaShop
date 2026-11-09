@@ -67,12 +67,4 @@ public abstract class CatalogTestBase : IClassFixture<CatalogApiFactory>
 
         return client;
     }
-
-    protected async Task<HttpClient> CreateClientWithTokenAsync(string token)
-    {
-        var client = Factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new("Bearer", token);
-
-        return client;
-    }
 }
