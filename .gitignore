@@ -17,6 +17,9 @@ TestResults/
 # User secrets / environment (if we ever use them locally)
 *.env
 
+# AI agent session files
+.opencode/
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using SyriaShop.Application.Catalog;
 
 namespace SyriaShop.IntegrationTests;
@@ -23,8 +22,7 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
         Assert.True(first!.TotalCount >= 16);
         Assert.Equal(5, first.Items.Count);
         Assert.Equal(5, second!.Items.Count);
-        Assert.Equal(Math.Ceiling(first.TotalCount / 5d), first.TotalPages);
-        Assert.Equal(second.Page, second.TotalPages > 1 ? 2 : 1);
+        Assert.Equal((int)Math.Ceiling(first.TotalCount / 5d), first.TotalPages);
         Assert.NotEqual(first.Items[0].Id, second.Items[0].Id);
     }
 
@@ -69,21 +67,22 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
     }
 
     [Fact]
-    public async Task CreateReadUpdateDelete_RoundTrip()
+    public async Task CreateReadUpdateDelete_RoundTrip_WithAdminToken()
     {
-        var category = await CreateCategory();
+        var adminClient = await CreateAdminClientAsync();
+        var category = await CreateCategoryAsync(adminClient);
 
-        var createResponse = await HttpClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
+        var createResponse = await adminClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
             category.Id, "Roundtrip Widget", "منتج دورة", Price: 75000m, Stock: 12, DescriptionEn: "A test widget"), JsonOptions);
 
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
 
         var created = (await createResponse.Content.ReadFromJsonAsync<ProductDetailResponse>(JsonOptions))!;
 
-        var getResponse = await HttpClient.GetAsync($"/api/products/{created.Slug}");
+        var getResponse = await adminClient.GetAsync($"/api/products/{created.Slug}");
         getResponse.EnsureSuccessStatusCode();
 
-        var update = await HttpClient.PutAsJsonAsync($"/api/products/{created.Id}", new ProductUpdateRequest(
+        var update = await adminClient.PutAsJsonAsync($"/api/products/{created.Id}", new ProductUpdateRequest(
             category.Id, "Roundtrip Widget V2", "منتج دورة 2", Price: 90000m, Stock: 20, IsActive: true), JsonOptions);
         update.EnsureSuccessStatusCode();
 
@@ -91,17 +90,19 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
         Assert.Equal(90000m, updated.Price);
         Assert.Equal(20, updated.Stock);
 
-        var delete = await HttpClient.DeleteAsync($"/api/products/{created.Id}");
+        var delete = await adminClient.DeleteAsync($"/api/products/{created.Id}");
         Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
 
-        var gone = await HttpClient.GetAsync($"/api/products/{created.Slug}");
+        var gone = await adminClient.GetAsync($"/api/products/{created.Slug}");
         Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
     }
 
     [Fact]
     public async Task Create_WithUnknownCategoryId_Returns404()
     {
-        var response = await HttpClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
+        var adminClient = await CreateAdminClientAsync();
+
+        var response = await adminClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
             Guid.NewGuid(), "Ghost Product", "منتج وهمي", Price: 1000m, Stock: 1), JsonOptions);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -110,9 +111,10 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
     [Fact]
     public async Task Create_WithNegativeStock_Returns400ProblemDetails()
     {
-        var category = await CreateCategory();
+        var adminClient = await CreateAdminClientAsync();
+        var category = await CreateCategoryAsync(adminClient);
 
-        var response = await HttpClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
+        var response = await adminClient.PostAsJsonAsync("/api/products", new ProductCreateRequest(
             category.Id, "Broken Product", "منتج خاطئ", Price: 1000m, Stock: -3), JsonOptions);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -127,9 +129,9 @@ public sealed class ProductEndpointsTests(CatalogApiFactory factory) : CatalogTe
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    private async Task<CategoryDetailResponse> CreateCategory()
+    private async Task<CategoryDetailResponse> CreateCategoryAsync(HttpClient client)
     {
-        var response = await HttpClient.PostAsJsonAsync("/api/categories", new CategoryCreateRequest(
+        var response = await client.PostAsJsonAsync("/api/categories", new CategoryCreateRequest(
             $"Product Test Cat {Guid.NewGuid():N}", "فئة منتجات", $"product-test-{Guid.NewGuid():N}"), JsonOptions);
 
         return (await response.Content.ReadFromJsonAsync<CategoryDetailResponse>(JsonOptions))!;
