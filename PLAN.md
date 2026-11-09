@@ -168,8 +168,8 @@
 - [x] Authentication integration tests.
 - [x] Authorization role-gate matrix tests.
 - [x] 32 unit tests passing.
-- [x] 23 integration tests passing.
-- [x] 55 tests passing in total.
+- [x] 24 integration tests passing.
+- [x] 56 tests passing in total.
 
 ### Human Review
 
